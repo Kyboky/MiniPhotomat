@@ -119,7 +119,7 @@ def preprocess_image(img, resize = 32, min_size = 60, padding = 4):
     new_img = np.array(new_img,dtype=np.uint8)
     return new_img
 
-test_img = "20211217_003053.jpg"
+test_img = "zadatak_1.jpg"
 solve = Solver()
 kernel = np.ones((3,3),np.uint8)
 f = cv2.imread(test_img)
@@ -130,7 +130,7 @@ f = cv2.cvtColor(f,cv2.COLOR_BGR2GRAY)
 # binary = cv2.threshold(R, 100, 255, cv2.THRESH_BINARY_INV)[1]
 binary = cv2.adaptiveThreshold(f, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 31, 15)
 cv2.GaussianBlur(binary,(5,5),1,dst=binary)
-cv2.threshold(binary, 20, 255, cv2.THRESH_BINARY,dst=binary)[1]
+cv2.threshold(binary, 10, 255, cv2.THRESH_BINARY,dst=binary)[1]
 cv2.morphologyEx(binary,cv2.MORPH_OPEN,kernel,dst=binary,iterations=2)
 cv2.imshow("Slika",binary)
 cv2.waitKey(0)
@@ -143,7 +143,7 @@ for i in range(labels.max()):
     label_mask = np.where(labels==(i+1),255,0)
     label_mask = np.array(label_mask,dtype=np.uint8)
     x, y, w, h = cv2.boundingRect(label_mask)
-    if (w<30 and h<30):
+    if (w<20 and h<20):
         continue
     char_img = preprocess_image(label_mask[y:y+h, x:x+w])
     char = Character(x+w/2, y+h/2, char_img, f.predict(char_img))

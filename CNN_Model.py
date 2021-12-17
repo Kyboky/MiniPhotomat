@@ -72,10 +72,10 @@ x_train, x_valid, y_train, y_valid = split_data(data, data_labels)
 model = Sequential()
 
 model.add(Conv2D(32, kernel_size=3, activation="relu",input_shape=(32, 32, 1)))
-# model.add(MaxPooling2D((2, 2),strides=2))
+model.add(MaxPooling2D((2, 2),strides=2))
 
 model.add(Conv2D(64, kernel_size=3, activation="relu"))
-# model.add(MaxPooling2D((2, 2),strides=2))
+model.add(MaxPooling2D((2, 2),strides=2))
 
 model.add(Flatten())
 model.add(Dropout(0.5))
