@@ -51,7 +51,7 @@ def initialize_folders():
     if not os.path.isdir("dataset/left_bracket"): os.mkdir("dataset/left_bracket")
 initialize_folders()
 
-img_string = "mama_2"
+img_string = "hele_kolege_2"
 prefix = img_string + '_'
 cv2.namedWindow("Slika")
 kernel = np.ones((3,3),np.uint8)
@@ -61,9 +61,10 @@ f = cv2.imread("learning_pictures/" + img_string + ".jpg")
 cv2.imshow("Slika",B)
 cv2.waitKey(0)
 f = cv2.cvtColor(f,cv2.COLOR_BGR2GRAY)
-binary = cv2.threshold(B, 100, 255, cv2.THRESH_BINARY_INV)[1]
-cv2.GaussianBlur(binary,(3,3),1,dst=binary)
-cv2.threshold(binary, 70, 255, cv2.THRESH_BINARY,dst=binary)[1]
+# binary = cv2.threshold(B, 100, 255, cv2.THRESH_BINARY_INV)[1]
+binary = cv2.adaptiveThreshold(f, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 31, 15)
+cv2.GaussianBlur(binary,(3,3),2,dst=binary)
+cv2.threshold(binary, 60, 255, cv2.THRESH_BINARY,dst=binary)[1]
 cv2.imshow("Slika",binary)
 cv2.waitKey(0)
 #binary = cv2.adaptiveThreshold(f, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 31, 30)

@@ -123,14 +123,14 @@ test_img = "20211217_003053.jpg"
 solve = Solver()
 kernel = np.ones((3,3),np.uint8)
 f = cv2.imread(test_img)
-(B,G,R) = cv2.split(f)
-# f = cv2.cvtColor(f,cv2.COLOR_BGR2GRAY)
+# (B,G,R) = cv2.split(f)
+f = cv2.cvtColor(f,cv2.COLOR_BGR2GRAY)
 # f = f[240:1222, 151:832]
-R = np.array(R,dtype=np.uint8)
-binary = cv2.threshold(R, 100, 255, cv2.THRESH_BINARY_INV)[1]
-
-cv2.GaussianBlur(binary,(3,3),0,dst=binary)
-cv2.threshold(binary, 10, 255, cv2.THRESH_BINARY,dst=binary)[1]
+# R = np.array(R,dtype=np.uint8)
+# binary = cv2.threshold(R, 100, 255, cv2.THRESH_BINARY_INV)[1]
+binary = cv2.adaptiveThreshold(f, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 31, 15)
+cv2.GaussianBlur(binary,(5,5),1,dst=binary)
+cv2.threshold(binary, 20, 255, cv2.THRESH_BINARY,dst=binary)[1]
 cv2.morphologyEx(binary,cv2.MORPH_OPEN,kernel,dst=binary,iterations=2)
 cv2.imshow("Slika",binary)
 cv2.waitKey(0)
@@ -152,25 +152,35 @@ for i in range(labels.max()):
 f = cv2.imread(test_img)
 font = cv2.FONT_HERSHEY_SIMPLEX
 # Debug plot
-list_of_chars.sort(key=lambda y: y.posy)
-last_posy = list_of_chars[0].posy
-curr = []
-for i in list_of_chars:
-    if abs(last_posy - i.posy) > 30:
-        curr.sort(key=lambda y: y.posx)
-        equation = ''.join([i.get_value() for i in curr])
-        equation_result = solve.solver(equation)
-        cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50,-50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-        last_posy = i.posy
-        curr = [i]
-    else:
-        curr.append(i)
-        last_posy = i.posy
 
-curr.sort(key=lambda y: y.posx)
-equation = ''.join([i.get_value() for i in curr])
-equation_result = solve.solver(equation)
-cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50,-50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+multiple_equations = False
+if multiple_equations:
+    list_of_chars.sort(key=lambda y: y.posy)
+    last_posy = list_of_chars[0].posy
+    curr = []
+    for i in list_of_chars:
+        if abs(last_posy - i.posy) > 30:
+            curr.sort(key=lambda y: y.posx)
+            equation = ''.join([i.get_value() for i in curr])
+            equation_result = solve.solver(equation)
+            cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50,-50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+            last_posy = i.posy
+            curr = [i]
+        else:
+            curr.append(i)
+            last_posy = i.posy
+    curr.sort(key=lambda y: y.posx)
+    equation = ''.join([i.get_value() for i in curr])
+    equation_result = solve.solver(equation)
+    cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50, -50), font, 1, (0, 0, 255), 2,cv2.LINE_AA)
+
+else:
+    list_of_chars.sort(key=lambda x: x.posx)
+    equation = ''.join([i.get_value() for i in list_of_chars])
+    print(equation)
+    equation_result = solve.solver(equation)
+    cv2.putText(f, equation + "= " + str(equation_result), list_of_chars[0].get_position(0, -50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+
 
 # for char in list_of_chars:
 #     cv2.putText(f,char.value,char.get_position(0, -50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)

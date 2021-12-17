@@ -85,7 +85,7 @@ model.summary()
 
 model.compile(optimizer='adam',loss="categorical_crossentropy", metrics=['accuracy'])
 
-model.fit(x_train,y_train,epochs=30)
+model.fit(x_train,y_train,epochs=20,batch_size=30)
 model.evaluate(x_valid,y_valid)
 
 model_json = model.to_json()
