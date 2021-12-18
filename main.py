@@ -1,10 +1,14 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+import base64
+import io
+import imageio
 from flask import Flask, render_template, request
 import jyserver.Flask as jsf
 import numpy as np
 from keras.models import model_from_json, Sequential
 from cv2 import cv2
+from PIL import Image
 
 class Solver:
     def __init__(self):
@@ -223,8 +227,16 @@ class App:
         self.count=0
         self.eq = ""
         self.solution = None
-    def solve(self):
+    def solve(self, debug):
         print("hi")
+        image = base64.b64decode(debug[22:])
+        print(image)
+        img = Image.open(io.BytesIO(image)).convert('RGB')
+        open_cv_image = np.array(img)
+        final_img = open_cv_image[:, :, ::-1].copy()
+        cv2.imshow("hi",final_img)
+        cv2.waitKey(0)
+        print(final_img.shape)
         self.count += 1
         self.js.document.getElementById("count").innerHTML = self.count
 
@@ -232,6 +244,10 @@ class App:
 @app.route('/')
 def index():
     return App.render(render_template('index.html'))
+
+# @app.route('/image/webp',methods=['GET'])
+# def image():
+#     return App.render(render_template('index.html'))
 
 test_img = "zadatak_1.jpg"
 

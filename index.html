@@ -26,7 +26,9 @@
 	<body>
 		<div id="container">
 			<video autoplay="true" id="videoElement">
-
+				<svg width="400" height="110">
+  					<rect width="300" height="100" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)" />
+				</svg>
 			</video>
 		</div>
 		<div style="vertical-align: middle; text-align: center;">
@@ -34,19 +36,28 @@
 			<p id="count">0</p>
 		</div>
 		<script>
-			function myFunction(){
-				server.solve();
-			}
 			var video = document.querySelector("#videoElement");
 
 			if (navigator.mediaDevices.getUserMedia) {
-			  navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+			  navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 2000 },
+        height: { ideal: 1500 } , facingMode: { exact: "environment" } } })
 				.then(function (stream) {
 				  video.srcObject = stream;
 				})
 				.catch(function (err0r) {
 				  console.log("Something went wrong!");
 				});
+			}
+
+			function myFunction(){
+				var canvas = document.createElement('canvas');
+				canvas.width = video.videoWidth;
+  				canvas.height = video.videoHeight;
+  				var context = canvas.getContext("2d");
+  				context.drawImage(video, 0, 0);
+  				var dataURL = canvas.toDataURL("image/png");
+				server.solve(dataURL);
+				console.log(dataURL);
 			}
 		</script>
 	</body>
