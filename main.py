@@ -5,14 +5,25 @@ from keras.models import model_from_json, Sequential
 from cv2 import cv2
 
 class Solver:
-    def operator_solver(self, equation):
-        operators = ("/", "*", "+", "-")
+    def __init__(self):
+        self.operators = ("/", "*", "+", "-")
+
+    def operator_solver(self,pos1 = -1,pos2 = -1):
+        if pos1 != -1:
+            equation = self.current_equation[pos1:pos2]
+        else:
+            equation = self.current_equation
         numbers_list = []
         operators_list = []
+        if equation[0] == '-':
+            is_negative = True
+            equation = equation[1:]
+        else:
+            is_negative = False
         i = 0
         num = ""
         for i in range(len(equation)):
-            if equation[i] in operators:
+            if equation[i] in self.operators:
                 operators_list.append(equation[i])
                 if num != "":
                     numbers_list.append(float(num))
@@ -23,6 +34,8 @@ class Solver:
         if num != "":
             numbers_list.append(float(num))
         count = 0
+        if is_negative:
+            numbers_list[0] *= (-1)
         while count < len(operators_list):
             if operators_list[count] == "/" or operators_list[count] == "*":
                 current_op = operators_list.pop(count)
@@ -54,16 +67,33 @@ class Solver:
             count += 1
         return numbers_list[0]
 
-    def solver(self, equation):
-        close_pos = equation.find(")")
+    def adding_mul(self):
+        open_bracket_split = self.current_equation.split("(")
+        for i in range(len(open_bracket_split) - 1):
+            if i == 0 and i == "":
+                continue
+            if open_bracket_split[i][-1] not in self.operators:
+                open_bracket_split[i] += "*"
+        self.current_equation = "(".join(open_bracket_split)
+        close_bracket_split = self.current_equation.split(")")
+        for i in range(1,len(close_bracket_split)-1):
+            if close_bracket_split[i] != '' and close_bracket_split[i][0] not in self.operators:
+                close_bracket_split[i] = "*" + close_bracket_split[i]
+        self.current_equation = ")".join(close_bracket_split)
+
+    def solve(self, equation):
+        self.current_equation = equation
+        if self.current_equation.find(")") != -1:
+            self.adding_mul()
+        close_pos = self.current_equation.find(")")
         while close_pos != -1:
-            open_pos = equation.rfind("(", 0, close_pos)
-            before_br = equation[0:open_pos]
-            after_br = equation[close_pos + 1:]
-            value = self.operator_solver(equation[open_pos + 1:close_pos])
-            equation = before_br + str(value) + after_br
-            close_pos = equation.find(")")
-        return self.operator_solver(equation)
+            open_pos = self.current_equation.rfind("(",0, close_pos)
+            before_br = self.current_equation[0:open_pos]
+            after_br = self.current_equation[close_pos + 1:]
+            value = self.operator_solver(open_pos + 1 , close_pos)
+            self.current_equation = before_br + str(value) + after_br
+            close_pos = self.current_equation.find(")")
+        return self.operator_solver()
 
 class Character:
     def __init__(self,x,y,img, value):
@@ -71,7 +101,6 @@ class Character:
         self.posy = y
         self.img = img
         self.value = value
-
     def getImg(self):
         return self.img
     def get_value(self):
@@ -80,7 +109,6 @@ class Character:
         return (int(self.posx + x_offset), int(self.posy + y_offset))
 
 class CNNModel:
-
     def __init__(self):
         self.str_value = ['0', '1', '2', '3','4','5','6','7','8','9','+','/','(','*',')','-']
         json_file = open('model.json', 'r')
@@ -120,7 +148,7 @@ def preprocess_image(img, resize = 32, min_size = 60, padding = 4):
     return new_img
 
 test_img = "zadatak_1.jpg"
-solve = Solver()
+solver = Solver()
 kernel = np.ones((3,3),np.uint8)
 f = cv2.imread(test_img)
 # (B,G,R) = cv2.split(f)
@@ -138,7 +166,6 @@ cv2.waitKey(0)
 ret, labels = cv2.connectedComponents(binary,connectivity=4)
 list_of_chars = []
 f = CNNModel()
-
 for i in range(labels.max()):
     label_mask = np.where(labels==(i+1),255,0)
     label_mask = np.array(label_mask,dtype=np.uint8)
@@ -148,7 +175,6 @@ for i in range(labels.max()):
     char_img = preprocess_image(label_mask[y:y+h, x:x+w])
     char = Character(x+w/2, y+h/2, char_img, f.predict(char_img))
     list_of_chars.append(char)
-
 f = cv2.imread(test_img)
 font = cv2.FONT_HERSHEY_SIMPLEX
 # Debug plot
@@ -162,7 +188,7 @@ if multiple_equations:
         if abs(last_posy - i.posy) > 30:
             curr.sort(key=lambda y: y.posx)
             equation = ''.join([i.get_value() for i in curr])
-            equation_result = solve.solver(equation)
+            equation_result = solver.solve(equation)
             cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50,-50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
             last_posy = i.posy
             curr = [i]
@@ -171,14 +197,14 @@ if multiple_equations:
             last_posy = i.posy
     curr.sort(key=lambda y: y.posx)
     equation = ''.join([i.get_value() for i in curr])
-    equation_result = solve.solver(equation)
+    equation_result = solver.solve(equation)
     cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50, -50), font, 1, (0, 0, 255), 2,cv2.LINE_AA)
 
 else:
     list_of_chars.sort(key=lambda x: x.posx)
     equation = ''.join([i.get_value() for i in list_of_chars])
     print(equation)
-    equation_result = solve.solver(equation)
+    equation_result = solver.solve(equation)
     cv2.putText(f, equation + "= " + str(equation_result), list_of_chars[0].get_position(0, -50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
 
