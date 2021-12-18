@@ -2,11 +2,10 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import base64
 import io
-import imageio
-from flask import Flask, render_template, request
+from flask import Flask, render_template
 import jyserver.Flask as jsf
 import numpy as np
-from keras.models import model_from_json, Sequential
+from keras.models import model_from_json
 from cv2 import cv2
 from PIL import Image
 
@@ -225,11 +224,7 @@ def solve_graphical_equation(img):
         equation_result = solver.solve(equation)
         cv2.putText(f, equation + "= " + str(equation_result), list_of_chars[0].get_position(0, -50), font, 1,
                     (0, 0, 255), 2, cv2.LINE_AA)
-
     return equation,equation_result
-    # cv2.imshow("Slika", f)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
 
 
 capture=0
@@ -246,15 +241,11 @@ class App:
     def solve(self, debug):
         print("hi")
         image = base64.b64decode(debug[22:])
-        # print(image)
         img = Image.open(io.BytesIO(image)).convert('L')
         open_cv_image = np.array(img)
-        # print(open_cv_image.shape[0])
         final_img = open_cv_image[int(open_cv_image.shape[0]/3):int(open_cv_image.shape[0]*2/3),:]
-        # final_img = open_cv_image[:, :, ::-1].copy()
         # cv2.imshow("hi",final_img)
         # cv2.waitKey(0)
-        # print(final_img.shape)
         (self.eq,self.solution) = solve_graphical_equation(final_img)
         self.js.document.getElementById("equation").innerHTML = "Equation:  " + self.eq
         self.js.document.getElementById("equation_result").innerHTML = "Equation result:  " + str(self.solution)
@@ -264,19 +255,8 @@ class App:
 def index():
     return App.render(render_template('index.html'))
 
-# @app.route('/image/webp',methods=['GET'])
-# def image():
-#     return App.render(render_template('index.html'))
-
 test_img = "zadatak_1.jpg"
 
 if __name__ == '__main__':
-    # solve_graphical_equation(cv2.imread(test_img))
     app.run(host="0.0.0.0",port="5000",ssl_context='adhoc')
-    #socketio.run(app = app, host="0.0.0.0")
 
-
-# for char in list_of_chars:
-#     print(char.value)
-#     cv2.imshow("Slika",char.img)
-#     cv2.waitKey(0)
