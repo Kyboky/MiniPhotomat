@@ -28,13 +28,20 @@ class Solver:
             is_negative = False
         i = 0
         num = ""
+        last_operator = False
         for i in range(len(equation)):
             if equation[i] in self.operators:
+                if last_operator:
+                    num = equation[i]
+                    last_operator = False
+                    continue
+                last_operator = True
                 operators_list.append(equation[i])
                 if num != "":
                     numbers_list.append(float(num))
                 num = ""
             else:
+                last_operator = False
                 num += equation[i]
             i += 1
         if num != "":
@@ -74,18 +81,22 @@ class Solver:
         return numbers_list[0]
 
     def adding_mul(self):
-        open_bracket_split = self.current_equation.split("(")
-        for i in range(len(open_bracket_split) - 1):
-            if i == 0 and i == "":
-                continue
-            if open_bracket_split[i][-1] not in self.operators:
-                open_bracket_split[i] += "*"
-        self.current_equation = "(".join(open_bracket_split)
-        close_bracket_split = self.current_equation.split(")")
-        for i in range(1,len(close_bracket_split)-1):
-            if close_bracket_split[i] != '' and close_bracket_split[i][0] not in self.operators:
-                close_bracket_split[i] = "*" + close_bracket_split[i]
-        self.current_equation = ")".join(close_bracket_split)
+        new_equation = self.current_equation
+        open_bracket = new_equation.find("(")
+        while open_bracket != -1:
+            if open_bracket != 0 and new_equation[open_bracket - 1] not in ["(", "+", "-", "/", "*"]:
+                before = new_equation[0:open_bracket]
+                after = new_equation[open_bracket:]
+                new_equation = before + "*" + after
+            open_bracket = new_equation.find("(", open_bracket + 1)
+        closed_bracket = new_equation.find(")")
+        while closed_bracket != -1:
+            if (closed_bracket + 1) < len(new_equation) and new_equation[closed_bracket + 1] not in [")", "+", "-", "/","*"]:
+                before = new_equation[0:closed_bracket + 1]
+                after = new_equation[closed_bracket + 1:]
+                new_equation = before + "*" + after
+            closed_bracket = new_equation.find(")", closed_bracket + 1)
+        self.current_equation = new_equation
 
     def solve(self, equation):
         self.current_equation = equation
@@ -155,15 +166,20 @@ def preprocess_image(img, resize = 32, min_size = 60, padding = 4):
 
 def solve_graphical_equation(img):
     # f = cv2.imread(test_img)
-    f = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    if len(img.shape) == 3:
+        f = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        f = img
     # binary = cv2.threshold(R, 100, 255, cv2.THRESH_BINARY_INV)[1]
-    binary = cv2.adaptiveThreshold(f, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 31, 15)
-    cv2.GaussianBlur(binary, (5, 5), 1, dst=binary)
+    binary = cv2.adaptiveThreshold(f, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 41, 10)
+    # cv2.imshow("Slika", binary)
+    # cv2.waitKey(0)
+    cv2.GaussianBlur(binary, (5, 5), 0, dst=binary)
     cv2.threshold(binary, 10, 255, cv2.THRESH_BINARY, dst=binary)[1]
     kernel = np.ones((3, 3), np.uint8)
     cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, dst=binary, iterations=2)
-    cv2.imshow("Slika", binary)
-    cv2.waitKey(0)
+    cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, dst=binary, iterations=2)
+
     ret, labels = cv2.connectedComponents(binary, connectivity=4)
     list_of_chars = []
 
@@ -210,9 +226,10 @@ def solve_graphical_equation(img):
         cv2.putText(f, equation + "= " + str(equation_result), list_of_chars[0].get_position(0, -50), font, 1,
                     (0, 0, 255), 2, cv2.LINE_AA)
 
-    cv2.imshow("Slika", f)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    return equation,equation_result
+    # cv2.imshow("Slika", f)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
 
 capture=0
@@ -224,21 +241,23 @@ app = Flask(__name__,template_folder="./")
 @jsf.use(app)
 class App:
     def __init__(self):
-        self.count=0
         self.eq = ""
         self.solution = None
     def solve(self, debug):
         print("hi")
         image = base64.b64decode(debug[22:])
-        print(image)
-        img = Image.open(io.BytesIO(image)).convert('RGB')
+        # print(image)
+        img = Image.open(io.BytesIO(image)).convert('L')
         open_cv_image = np.array(img)
-        final_img = open_cv_image[:, :, ::-1].copy()
-        cv2.imshow("hi",final_img)
-        cv2.waitKey(0)
-        print(final_img.shape)
-        self.count += 1
-        self.js.document.getElementById("count").innerHTML = self.count
+        # print(open_cv_image.shape[0])
+        final_img = open_cv_image[int(open_cv_image.shape[0]/3):int(open_cv_image.shape[0]*2/3),:]
+        # final_img = open_cv_image[:, :, ::-1].copy()
+        # cv2.imshow("hi",final_img)
+        # cv2.waitKey(0)
+        # print(final_img.shape)
+        (self.eq,self.solution) = solve_graphical_equation(final_img)
+        self.js.document.getElementById("equation").innerHTML = "Equation:  " + self.eq
+        self.js.document.getElementById("equation_result").innerHTML = "Equation result:  " + str(self.solution)
 
 
 @app.route('/')

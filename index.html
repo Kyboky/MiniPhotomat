@@ -1,40 +1,58 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<h1>MiniPhotomath by Kyboky</h1>
+		<h1 style="font-size: 60px">MiniPhotomath by Kyboky</h1>
 		<style>
 		#container {
 			margin: 0px auto;
 			width: 900px;
 			height: 1200px;
 			border: 10px #333 solid;
+			position: relative;
 		}
 		#videoElement {
 			width: 900px;
 			height: 1200px;
 			background-color: #666;
 		}
+
 		.button {
 			height: 100px;
 			width: 300px;
 			padding: 20px 20px;
 			font-size: 30px;
 			}
+		.rectangle {
+			position: absolute;
+			top:33.33%;
+			left:-1px;
+			height: 33.33%;
+			width: 100%;
+			border: 2px #f00 solid;
+		}
+		.equations{
+			font-size: 40px;
+		}
 		</style>
 	</head>
 
 	<body>
 		<div id="container">
+			<div class="rectangle"></div>
 			<video autoplay="true" id="videoElement">
-				<svg width="400" height="110">
-  					<rect width="300" height="100" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)" />
-				</svg>
+
 			</video>
+
 		</div>
 		<div style="vertical-align: middle; text-align: center;">
 			<button onclick="myFunction()" class="button">Solve</button>
-			<p id="count">0</p>
+
 		</div>
+		<div>
+			<p id="equation", class="equations">Expression:  </p>
+			<p id="equation_result", class="equations">Expression result:  </p>
+		</div>
+
 		<script>
 			var video = document.querySelector("#videoElement");
 
@@ -54,7 +72,7 @@
 				canvas.width = video.videoWidth;
   				canvas.height = video.videoHeight;
   				var context = canvas.getContext("2d");
-  				context.drawImage(video, 0, 0);
+  				context.drawImage(video, 0,0);
   				var dataURL = canvas.toDataURL("image/png");
 				server.solve(dataURL);
 				console.log(dataURL);
