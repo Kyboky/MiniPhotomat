@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+	<h1>MiniPhotomath by Kyboky</h1>
+<title>Display Webcam Stream</title>
+<style>
+#container {
+	margin: 0px auto;
+	width: 900px;
+	height: 1200px;
+	border: 10px #333 solid;
+}
+#videoElement {
+	width: 900px;
+	height: 1200px;
+	background-color: #666;
+}
+.button {
+	height: 100px;
+	width: 300px;
+	padding: 20px 20px;
+	font-size: 30px;
+	}
+
+</style>
+</head>
+
+<body>
+<div id="container">
+	<video autoplay="true" id="videoElement">
+
+	</video>
+</div>
+<div style="vertical-align: middle; text-align: center;">
+	<input type="submit" class="button" value="Solve" name="solve"/>
+</div>
+<script>
+    var video = document.querySelector("#videoElement");
+
+    if (navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+        .then(function (stream) {
+          video.srcObject = stream;
+        })
+        .catch(function (err0r) {
+          console.log("Something went wrong!");
+        });
+}
+</script>
+</body>
+</html>
+

@@ -1,8 +1,12 @@
-import numpy as np
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+from flask import Flask, render_template, Response, request
+# from flask_socketio import SocketIO
+# from threading import Thread
+import numpy as np
 from keras.models import model_from_json, Sequential
 from cv2 import cv2
+import io
 
 class Solver:
     def __init__(self):
@@ -119,10 +123,10 @@ class CNNModel:
         loaded_model.load_weights("model.h5")
         self.model = loaded_model
         print("Loaded model from disk")
-    def predict(self,x):
-        if len(char_img.shape):
-            x = x.reshape(1,32,32)
-        return self.str_value[self.model.predict(x).argmax()]
+    def predict(self,char_img):
+        if len(char_img.shape) != 3:
+            char_img = char_img.reshape(1,32,32)
+        return self.str_value[self.model.predict(char_img).argmax()]
 
 def preprocess_image(img, resize = 32, min_size = 60, padding = 4):
     height, width = img.shape
@@ -147,73 +151,109 @@ def preprocess_image(img, resize = 32, min_size = 60, padding = 4):
     new_img = np.array(new_img,dtype=np.uint8)
     return new_img
 
-test_img = "zadatak_1.jpg"
+def solve_graphical_equation(img):
+    # f = cv2.imread(test_img)
+    f = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # binary = cv2.threshold(R, 100, 255, cv2.THRESH_BINARY_INV)[1]
+    binary = cv2.adaptiveThreshold(f, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 31, 15)
+    cv2.GaussianBlur(binary, (5, 5), 1, dst=binary)
+    cv2.threshold(binary, 10, 255, cv2.THRESH_BINARY, dst=binary)[1]
+    kernel = np.ones((3, 3), np.uint8)
+    cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, dst=binary, iterations=2)
+    cv2.imshow("Slika", binary)
+    cv2.waitKey(0)
+    ret, labels = cv2.connectedComponents(binary, connectivity=4)
+    list_of_chars = []
+
+    for i in range(labels.max()):
+        label_mask = np.where(labels == (i + 1), 255, 0)
+        label_mask = np.array(label_mask, dtype=np.uint8)
+        x, y, w, h = cv2.boundingRect(label_mask)
+        if (w < 20 and h < 20):
+            continue
+        char_img = preprocess_image(label_mask[y:y + h, x:x + w])
+        char = Character(x + w / 2, y + h / 2, char_img, cnn_model.predict(char_img))
+        list_of_chars.append(char)
+    f = cv2.imread(test_img)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    multiple_equations = False
+    if multiple_equations:
+        list_of_chars.sort(key=lambda y: y.posy)
+        last_posy = list_of_chars[0].posy
+        curr = []
+        for i in list_of_chars:
+            if abs(last_posy - i.posy) > 30:
+                curr.sort(key=lambda y: y.posx)
+                equation = ''.join([i.get_value() for i in curr])
+                equation_result = solver.solve(equation)
+                cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50, -50), font, 1,
+                            (0, 0, 255), 2, cv2.LINE_AA)
+                last_posy = i.posy
+                curr = [i]
+            else:
+                curr.append(i)
+                last_posy = i.posy
+        curr.sort(key=lambda y: y.posx)
+        equation = ''.join([i.get_value() for i in curr])
+        equation_result = solver.solve(equation)
+        cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50, -50), font, 1, (0, 0, 255), 2,
+                    cv2.LINE_AA)
+
+    else:
+        list_of_chars.sort(key=lambda x: x.posx)
+        equation = ''.join([i.get_value() for i in list_of_chars])
+        print(equation)
+        equation_result = solver.solve(equation)
+        cv2.putText(f, equation + "= " + str(equation_result), list_of_chars[0].get_position(0, -50), font, 1,
+                    (0, 0, 255), 2, cv2.LINE_AA)
+
+    cv2.imshow("Slika", f)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+def gen_frames():  # generate frame by frame from camera
+    global capture
+    camera = cv2.VideoCapture(0)
+    while True:
+        retval, frame = camera.read()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+capture=0
 solver = Solver()
-kernel = np.ones((3,3),np.uint8)
-f = cv2.imread(test_img)
-# (B,G,R) = cv2.split(f)
-f = cv2.cvtColor(f,cv2.COLOR_BGR2GRAY)
-# f = f[240:1222, 151:832]
-# R = np.array(R,dtype=np.uint8)
-# binary = cv2.threshold(R, 100, 255, cv2.THRESH_BINARY_INV)[1]
-binary = cv2.adaptiveThreshold(f, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 31, 15)
-cv2.GaussianBlur(binary,(5,5),1,dst=binary)
-cv2.threshold(binary, 10, 255, cv2.THRESH_BINARY,dst=binary)[1]
-cv2.morphologyEx(binary,cv2.MORPH_OPEN,kernel,dst=binary,iterations=2)
-cv2.imshow("Slika",binary)
-cv2.waitKey(0)
-# binary = cv2.rotate(binary,cv2.ROTATE_90_COUNTERCLOCKWISE)
-ret, labels = cv2.connectedComponents(binary,connectivity=4)
-list_of_chars = []
-f = CNNModel()
-for i in range(labels.max()):
-    label_mask = np.where(labels==(i+1),255,0)
-    label_mask = np.array(label_mask,dtype=np.uint8)
-    x, y, w, h = cv2.boundingRect(label_mask)
-    if (w<20 and h<20):
-        continue
-    char_img = preprocess_image(label_mask[y:y+h, x:x+w])
-    char = Character(x+w/2, y+h/2, char_img, f.predict(char_img))
-    list_of_chars.append(char)
-f = cv2.imread(test_img)
-font = cv2.FONT_HERSHEY_SIMPLEX
-# Debug plot
+cnn_model = CNNModel()
+camera = cv2.VideoCapture(0)
+app = Flask(__name__, template_folder='./')
+# socketio = SocketIO(app)
 
-multiple_equations = False
-if multiple_equations:
-    list_of_chars.sort(key=lambda y: y.posy)
-    last_posy = list_of_chars[0].posy
-    curr = []
-    for i in list_of_chars:
-        if abs(last_posy - i.posy) > 30:
-            curr.sort(key=lambda y: y.posx)
-            equation = ''.join([i.get_value() for i in curr])
-            equation_result = solver.solve(equation)
-            cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50,-50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-            last_posy = i.posy
-            curr = [i]
-        else:
-            curr.append(i)
-            last_posy = i.posy
-    curr.sort(key=lambda y: y.posx)
-    equation = ''.join([i.get_value() for i in curr])
-    equation_result = solver.solve(equation)
-    cv2.putText(f, equation + "= " + str(equation_result), curr[0].get_position(50, -50), font, 1, (0, 0, 255), 2,cv2.LINE_AA)
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-else:
-    list_of_chars.sort(key=lambda x: x.posx)
-    equation = ''.join([i.get_value() for i in list_of_chars])
-    print(equation)
-    equation_result = solver.solve(equation)
-    cv2.putText(f, equation + "= " + str(equation_result), list_of_chars[0].get_position(0, -50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+@app.route('/video_feed')
+def video_feed():
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-# for char in list_of_chars:
-#     cv2.putText(f,char.value,char.get_position(0, -50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+@app.route('/requests', methods=['POST', 'GET'])
+def tasks():
+    global switch, camera
+    if request.method == 'POST':
+        if request.form.get('solve') == 'Solve':
+            global capture
+            capture = 1
+    elif request.method == 'GET':
+        return render_template('index.html')
+    return render_template('index.html')
 
-cv2.imshow("Slika",f)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+test_img = "zadatak_1.jpg"
+
+if __name__ == '__main__':
+    # solve_graphical_equation(cv2.imread(test_img))
+    app.run(host="0.0.0.0",port="5001",ssl_context='adhoc')
+    #socketio.run(app = app, host="0.0.0.0")
+
 
 # for char in list_of_chars:
 #     print(char.value)
