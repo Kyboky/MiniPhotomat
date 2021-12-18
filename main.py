@@ -1,12 +1,10 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-from flask import Flask, render_template, Response, request
-# from flask_socketio import SocketIO
-# from threading import Thread
+from flask import Flask, render_template, request
+import jyserver.Flask as jsf
 import numpy as np
 from keras.models import model_from_json, Sequential
 from cv2 import cv2
-import io
 
 class Solver:
     def __init__(self):
@@ -212,46 +210,34 @@ def solve_graphical_equation(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def gen_frames():  # generate frame by frame from camera
-    global capture
-    camera = cv2.VideoCapture(0)
-    while True:
-        retval, frame = camera.read()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 capture=0
 solver = Solver()
 cnn_model = CNNModel()
 camera = cv2.VideoCapture(0)
-app = Flask(__name__, template_folder='./')
-# socketio = SocketIO(app)
+app = Flask(__name__,template_folder="./")
+
+@jsf.use(app)
+class App:
+    def __init__(self):
+        self.count=0
+        self.eq = ""
+        self.solution = None
+    def solve(self):
+        print("hi")
+        self.count += 1
+        self.js.document.getElementById("count").innerHTML = self.count
+
 
 @app.route('/')
 def index():
-    return render_template('index.html')
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-
-@app.route('/requests', methods=['POST', 'GET'])
-def tasks():
-    global switch, camera
-    if request.method == 'POST':
-        if request.form.get('solve') == 'Solve':
-            global capture
-            capture = 1
-    elif request.method == 'GET':
-        return render_template('index.html')
-    return render_template('index.html')
+    return App.render(render_template('index.html'))
 
 test_img = "zadatak_1.jpg"
 
 if __name__ == '__main__':
     # solve_graphical_equation(cv2.imread(test_img))
-    app.run(host="0.0.0.0",port="5001",ssl_context='adhoc')
+    app.run(host="0.0.0.0",port="5000",ssl_context='adhoc')
     #socketio.run(app = app, host="0.0.0.0")
 
 
