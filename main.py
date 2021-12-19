@@ -6,7 +6,8 @@ from flask import Flask, render_template
 import jyserver.Flask as jsf
 import numpy as np
 from keras.models import model_from_json
-from cv2 import cv2
+import cv2
+# from cv2 import cv2
 from PIL import Image
 
 class Solver:
@@ -191,7 +192,7 @@ def solve_graphical_equation(img):
         char_img = preprocess_image(label_mask[y:y + h, x:x + w])
         char = Character(x + w / 2, y + h / 2, char_img, cnn_model.predict(char_img))
         list_of_chars.append(char)
-    f = cv2.imread(test_img)
+    # f = cv2.imread(test_img)
     font = cv2.FONT_HERSHEY_SIMPLEX
 
     multiple_equations = False
@@ -220,10 +221,10 @@ def solve_graphical_equation(img):
     else:
         list_of_chars.sort(key=lambda x: x.posx)
         equation = ''.join([i.get_value() for i in list_of_chars])
-        print(equation)
+        # print(equation)
         equation_result = solver.solve(equation)
-        cv2.putText(f, equation + "= " + str(equation_result), list_of_chars[0].get_position(0, -50), font, 1,
-                    (0, 0, 255), 2, cv2.LINE_AA)
+        # cv2.putText(f, equation + "= " + str(equation_result), list_of_chars[0].get_position(0, -50), font, 1,
+        #             (0, 0, 255), 2, cv2.LINE_AA)
     return equation,equation_result
 
 
@@ -255,7 +256,7 @@ class App:
 def index():
     return App.render(render_template('index.html'))
 
-test_img = "zadatak_1.jpg"
+# test_img = "zadatak_1.jpg"
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0",port="5000",ssl_context='adhoc')
