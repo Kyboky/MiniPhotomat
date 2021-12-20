@@ -82,6 +82,7 @@ class Solver:
 
     def adding_mul(self):
         new_equation = self.current_equation
+
         open_bracket = new_equation.find("(")
         while open_bracket != -1:
             if open_bracket != 0 and new_equation[open_bracket - 1] not in ["(", "+", "-", "/", "*"]:
@@ -98,19 +99,25 @@ class Solver:
             closed_bracket = new_equation.find(")", closed_bracket + 1)
         self.current_equation = new_equation
 
+
     def solve(self, equation):
-        self.current_equation = equation
-        if self.current_equation.find(")") != -1:
-            self.adding_mul()
-        close_pos = self.current_equation.find(")")
-        while close_pos != -1:
-            open_pos = self.current_equation.rfind("(",0, close_pos)
-            before_br = self.current_equation[0:open_pos]
-            after_br = self.current_equation[close_pos + 1:]
-            value = self.operator_solver(open_pos + 1 , close_pos)
-            self.current_equation = before_br + str(value) + after_br
+        try:
+            if not equation.count("(") == equation.count(")"):
+                return None, "Number of open and closed bracket not matching"
+            self.current_equation = equation
+            if self.current_equation.find(")") != -1:
+                self.adding_mul()
             close_pos = self.current_equation.find(")")
-        return self.operator_solver()
+            while close_pos != -1:
+                open_pos = self.current_equation.rfind("(",0, close_pos)
+                before_br = self.current_equation[0:open_pos]
+                after_br = self.current_equation[close_pos + 1:]
+                value = self.operator_solver(open_pos + 1 , close_pos)
+                self.current_equation = before_br + str(value) + after_br
+                close_pos = self.current_equation.find(")")
+            return self.operator_solver(), "OK"
+        except ZeroDivisionError:
+            return None, "You cannot divide by zero"
 
 class Character:
     def __init__(self,x,y,img, value):
@@ -222,10 +229,10 @@ def solve_graphical_equation(img):
         list_of_chars.sort(key=lambda x: x.posx)
         equation = ''.join([i.get_value() for i in list_of_chars])
         # print(equation)
-        equation_result = solver.solve(equation)
+        equation_result, status = solver.solve(equation)
         # cv2.putText(f, equation + "= " + str(equation_result), list_of_chars[0].get_position(0, -50), font, 1,
         #             (0, 0, 255), 2, cv2.LINE_AA)
-    return equation,equation_result
+    return equation,equation_result, status
 
 
 capture=0
@@ -239,24 +246,22 @@ class App:
     def __init__(self):
         self.eq = ""
         self.solution = None
+        self.status = "OK"
     def solve(self, debug):
-        print("hi")
+        self.js.document.getElementById("status").innerHTML = "Status: Computing"
         image = base64.b64decode(debug[22:])
         img = Image.open(io.BytesIO(image)).convert('L')
         open_cv_image = np.array(img)
         final_img = open_cv_image[int(open_cv_image.shape[0]/3):int(open_cv_image.shape[0]*2/3),:]
-        # cv2.imshow("hi",final_img)
-        # cv2.waitKey(0)
-        (self.eq,self.solution) = solve_graphical_equation(final_img)
-        self.js.document.getElementById("equation").innerHTML = "Equation:  " + self.eq
-        self.js.document.getElementById("equation_result").innerHTML = "Equation result:  " + str(self.solution)
+        (self.eq, self.solution, self.status) = solve_graphical_equation(final_img)
+        self.js.document.getElementById("equation").innerHTML = "Expression:  " + self.eq
+        self.js.document.getElementById("equation_result").innerHTML = "Expression result:  " + str(self.solution)
+        self.js.document.getElementById("status").innerHTML = "Status:  " + str(self.status)
 
 
 @app.route('/')
 def index():
     return App.render(render_template('index.html'))
-
-# test_img = "zadatak_1.jpg"
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0",port="5000",ssl_context='adhoc')

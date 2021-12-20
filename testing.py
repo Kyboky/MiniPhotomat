@@ -70,40 +70,46 @@ class Solver:
 
     def adding_mul(self):
         new_equation = self.current_equation
+
         open_bracket = new_equation.find("(")
         while open_bracket != -1:
             if open_bracket != 0 and new_equation[open_bracket - 1] not in ["(", "+", "-", "/", "*"]:
                 before = new_equation[0:open_bracket]
                 after = new_equation[open_bracket:]
                 new_equation = before + "*" + after
-            open_bracket = new_equation.find("(", open_bracket+1)
+            open_bracket = new_equation.find("(", open_bracket + 1)
         closed_bracket = new_equation.find(")")
         while closed_bracket != -1:
             if (closed_bracket + 1) < len(new_equation) and new_equation[closed_bracket + 1] not in [")", "+", "-", "/","*"]:
-                before = new_equation[0:closed_bracket+1]
-                after = new_equation[closed_bracket+1:]
+                before = new_equation[0:closed_bracket + 1]
+                after = new_equation[closed_bracket + 1:]
                 new_equation = before + "*" + after
             closed_bracket = new_equation.find(")", closed_bracket + 1)
         self.current_equation = new_equation
 
+
     def solve(self, equation):
-        self.current_equation = equation
-        if self.current_equation.find(")") != -1:
-            self.adding_mul()
-        print(self.current_equation)
-        close_pos = self.current_equation.find(")")
-        while close_pos != -1:
-            open_pos = self.current_equation.rfind("(",0, close_pos)
-            before_br = self.current_equation[0:open_pos]
-            after_br = self.current_equation[close_pos + 1:]
-            value = self.operator_solver(open_pos + 1 , close_pos)
-            self.current_equation = before_br + str(value) + after_br
-            print(self.current_equation)
+        try:
+            if not equation.count("(") == equation.count(")"):
+                return None, "Number of open and closed bracket not maching"
+            self.current_equation = equation
+            if self.current_equation.find(")") != -1:
+                self.adding_mul()
             close_pos = self.current_equation.find(")")
-        return self.operator_solver()
+            while close_pos != -1:
+                open_pos = self.current_equation.rfind("(",0, close_pos)
+                before_br = self.current_equation[0:open_pos]
+                after_br = self.current_equation[close_pos + 1:]
+                value = self.operator_solver(open_pos + 1 , close_pos)
+                self.current_equation = before_br + str(value) + after_br
+                close_pos = self.current_equation.find(")")
+            return self.operator_solver(), "OK"
+        except ZeroDivisionError:
+            return None, "You cannot divide by zero"
 
 
 solver = Solver()
-equation = "(2+4(3-2)4)"
-x = solver.solve(equation)
+equation = "-2+(4+2)/(4-4)"
+(x, status) = solver.solve(equation)
 print(x)
+print(status)
