@@ -118,6 +118,8 @@ class Solver:
             return self.operator_solver(), "OK"
         except ZeroDivisionError:
             return None, "You cannot divide by zero"
+        except:
+            return None, "Cannot be computed"
 
 class Character:
     def __init__(self,x,y,img, value):
@@ -248,6 +250,8 @@ class App:
         self.solution = None
         self.status = "OK"
     def solve(self, debug):
+        self.js.document.getElementById("equation").innerHTML = "Expression:  "
+        self.js.document.getElementById("equation_result").innerHTML = "Expression result:  "
         self.js.document.getElementById("status").innerHTML = "Status: Computing"
         image = base64.b64decode(debug[22:])
         img = Image.open(io.BytesIO(image)).convert('L')
