@@ -12,6 +12,12 @@ To run container
 
 	docker container start miniphotomath_container
 	
+After starting container use your phone or other device and open browser.
+In browser type
+
+	https://[pcip]:5000/
+
+Where pcip is ip of a pc that is running a container.
 If you want to stop container use 
 
 	docker container stop miniphotomath_container
