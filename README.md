@@ -12,8 +12,7 @@ To run container
 
 	docker container start miniphotomath_container
 	
-After starting container use your phone or other device and open browser.
-In browser type
+After starting container use your phone or other device with camera, open browser and type
 
 	https://[pcip]:5000/
 
