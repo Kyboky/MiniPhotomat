@@ -46,7 +46,10 @@ User interface
         - Computing
         - Error status
     
-![img.png](Images/Phone_Screenshot.jpg)
+
+<img src="https://github.com/Kyboky/MiniPhotomath/blob/master/Images/Phone_Screenshot.jpg" width="500">
+
+
 
 
 	
