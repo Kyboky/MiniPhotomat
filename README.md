@@ -17,6 +17,7 @@ After starting container use your phone or other device with camera, open browse
 	https://[pcip]:5000/
 
 Where pcip is ip of a pc that is running a container.
+
 If you want to stop container use 
 
 	docker container stop miniphotomath_container
