@@ -1,16 +1,17 @@
 # MiniPhotomath
 
-To build a docker image use this comand
+##How to use
+1. Build a docker image from git repository 
+    '''sh 
+    docker build https://github.com/Kyboky/MiniPhotomath.git -t miniphotomath
+    ''''
+Create docker container with an image ()
 
-	docker build https://github.com/Kyboky/MiniPhotomath.git -t miniphotomath
-	
-Create container with a image
-
-	docker container create --name miniphotomath_container --publish 5000:5000 miniphotomath
-  
     docker container create --name miniphotomath_container --publish 443:5000 miniphotomath
 
-To run container
+	docker container create --name miniphotomath_container --publish 5000:5000 miniphotomath
+
+To start a container
 
 	docker container start miniphotomath_container
 	
