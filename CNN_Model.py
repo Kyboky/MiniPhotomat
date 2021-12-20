@@ -71,15 +71,15 @@ x_train, x_valid, y_train, y_valid = split_data(data, data_labels)
 
 model = Sequential()
 
-model.add(Conv2D(64, kernel_size=3, activation="relu",input_shape=(32, 32, 1)))
+model.add(Conv2D(32, kernel_size=3, activation="relu",input_shape=(32, 32, 1)))
 # model.add(MaxPooling2D((2, 2),strides=2))
 model.add(MaxPooling2D((2, 2)))
 
-model.add(Conv2D(32, kernel_size=3, activation="relu"))
-model.add(MaxPooling2D((3,3)))
+model.add(Conv2D(64, kernel_size=3, activation="relu"))
+model.add(MaxPooling2D((2,2)))
 
 model.add(Flatten())
-model.add(Dropout(0.3))
+model.add(Dropout(0.5))
 # model.add(Dense(64, activation="relu"))
 # model.add(Dense(32, activation="relu"))
 
@@ -88,7 +88,7 @@ model.summary()
 
 model.compile(optimizer='adam',loss="categorical_crossentropy", metrics=['accuracy'])
 
-model.fit(x_train,y_train,epochs=50,batch_size=50)
+model.fit(x_train,y_train,epochs=50,batch_size=40)
 model.evaluate(x_valid,y_valid)
 
 model_json = model.to_json()
