@@ -25,7 +25,7 @@ docker container start miniphotomath_container
 ```sh
 https://[host-pc ip]
 ```  
-- in case of changing port number in creating container it is mandatory to add post number as 
+- in case of changing port number in creating container it is mandatory to add post number as
   
 ```sh
 https://[host-pc ip]:[port number]
